@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+    app1:
+      build: ./app
+      ports:
+        - "5001:3000"
+      environment:
+        - NODE_ENV=development
+      env_file:
+        - ./app/.env
+      depends_on:
+        postgres:
+          condition: service_healthy
+      networks:
+        - internal-network
+      restart: unless-stopped
+      command: sh -c "yarn migrate && yarn start"
+
+    app2:
+      build: ./app
+      ports:
+        - "5002:3000"
+      environment:
+        - NODE_ENV=development
+      env_file:
+        - ./app/.env
+      depends_on:
+        postgres:
+          condition: service_healthy
+      networks:
+        - internal-network
+      restart: unless-stopped
+      command: sh -c "yarn migrate && yarn start"
+    
+    subscriber:
+      build: ./subscriber
+      env_file:
+        - ./subscriber/.env
+      networks:
+        - internal-network
+    
+    postgres:
+      image: postgres:15-alpine
+      env_file:
+        - ./app/.env
+      ports:
+        - "5432:5432"
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      networks:
+        - internal-network
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+        start_period: 30s
+      restart: unless-stopped
+    
+volumes:
+  postgres_data:
+
+networks:
+  internal-network:
+    driver: bridge

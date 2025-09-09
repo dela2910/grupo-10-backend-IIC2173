@@ -1,0 +1,4 @@
+paho-mqtt
+# python-dotenv
+# descomentar en local
+requests
